@@ -1,4 +1,4 @@
-# core-service-h2
+# review-service-h2
 
 to create microservices faster, you need a backbone. This boilerplate prepared to practise core microservice concepts like: 
 
@@ -34,7 +34,7 @@ to create microservices faster, you need a backbone. This boilerplate prepared t
 ## Naming Conventions
 
 - project name for template
-    - intellij top-level: core-service-h2
+    - intellij top-level: review-service-h2
     - package name: com.backbone.core
 
 - project name for a real service will take place below!
@@ -49,7 +49,7 @@ to create microservices faster, you need a backbone. This boilerplate prepared t
 **on IDE**, 
 
 1. `mkdir microservice-backbone-boilerplate && cd microservice-backbone-boilerplate` then
-    - `git clone https://github.com/tansudasli/core-service-h2.git && cd core-service-h2`
+    - `git clone https://github.com/tansudasli/review-service-h2.git && cd review-service-h2`
 2. to Run the application <br>
    * `./gradlew bootRun` to start,
    * `./gradlew bootJar` to create jar lib, and run w/ `java -jar build/libs/*.jar`

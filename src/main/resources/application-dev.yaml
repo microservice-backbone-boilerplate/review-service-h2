@@ -6,7 +6,7 @@ spring:
   #    include: db          # to include application-db.yaml file
   #    active:              # none, dev, test ... to switch profiles
   application:
-    name: core-service-h2
+    name: review-service-h2
   h2:                     # db
     console:
       enabled: true
