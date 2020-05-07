@@ -38,11 +38,12 @@ to create microservices faster, you need a backbone. This boilerplate prepared t
     - package name: com.backbone.core
 
 - project name for a real service will take place below!
-    - intellij top-level: product-service
+    - intellij top-level: review-service
     - package name: com.backbone.core
-    - gradle's project name: product-service
-        - jar name: build/libs/product-service-0.0.1-SNAPSHOT.jar
-    - deployment name in k8s: product-service
+    - gradle's project name: review-service
+        - jar name: build/libs/review-service-0.0.1-SNAPSHOT.jar
+    - deployment name in k8s: review-service
+    - url format: /review/1 or /reviews
 
 ## How To Start
 
@@ -55,8 +56,8 @@ to create microservices faster, you need a backbone. This boilerplate prepared t
    * `./gradlew bootJar` to create jar lib, and run w/ `java -jar build/libs/*.jar`
 3. to test run `curl localhost:8080`
    * `curl localhost:8080/dummy` or `curl localhost:8080/dummy/name`
-   * `curl localhost:8080/products` or `curl localhost:8080/products/10`
-4. to access h2-db check `localhost:8080/h2-console`  w/ conn. `jdbc:h2:mem:product`
+   * `curl localhost:8080/reviews` or `curl localhost:8080/reviews/10`
+4. to access h2-db check `localhost:8080/h2-console`  w/ conn. `jdbc:h2:mem:reviews`
 
 <br>**on Kubernetes**,
 

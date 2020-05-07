@@ -8,21 +8,25 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import java.util.List;
 
 @Entity
 @Data
 @EqualsAndHashCode(callSuper=false)
-public class Product extends RepresentationModel {
+public class Review extends RepresentationModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    private String category;
+    private int userName;
+    private int productId;
+
     private String title;
-    private String subTitle;
-    private String brand;
     private int rating;
-    private String shortDescription;
+    private boolean isVerifiedPurchase;
+    private boolean isHelpful;
+    private boolean isAbuse;
+//    private List<String> tags;
     private String description;
 }

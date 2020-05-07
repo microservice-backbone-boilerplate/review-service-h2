@@ -8,12 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Integer> {
-    Optional<Product> findById(int id);
-    Optional<List<Product>> findProductsByCategory(String category);
+public interface ReviewRepository extends JpaRepository<Review, Integer> {
+    Optional<Review> findById(int id);
+    Optional<List<Review>> findReviewsByProductId(Integer productId);
+    Optional<List<Review>> findReviewsByUserName(String userName);
 
-    @Query("select distinct p.category from Product p")
-    Optional<List<String>> getDistinctCategories();
 
 //    for custom queries,if you need
 //    @Query("select p from Product p")
