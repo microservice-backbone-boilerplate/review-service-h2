@@ -19,7 +19,7 @@ public class Review extends RepresentationModel {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    private int userName;
+    private String userName;
     private int productId;
 
     private String title;
