@@ -2,6 +2,8 @@ package com.backbone.core.demo;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -115,6 +118,32 @@ public class ReviewController {
             return new ResponseEntity<>(reviews.get(), HttpStatus.OK);
         } catch (Exception e) {
             log.error("Get reviews: {}", e.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
+        }
+    }
+
+    /**
+     * Get all reviews via paging w/ default 10 size.
+     *
+     * @param page starting w/ 0 to ...N
+     * @return If OK, returns List<Review>, and HttpStatus.OK
+     *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
+     */
+    @GetMapping("/reviews/page/{page}")
+    public ResponseEntity<List<Review>> getReviews(@PathVariable String page) {
+        log.info("Get reviews w/ paging: {}", page);
+
+        try {
+            Page<Review> reviews = repository.findAll(PageRequest.of(Integer.parseInt(page), 10));
+
+            // todo: if returns no value, means error
+
+            log.info("Returned page:{} of reviews: {}", page, reviews.get());
+
+            return new ResponseEntity<>(reviews.get().collect(Collectors.toList()), HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Get reviews w/ paging: {}: {}", page, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
