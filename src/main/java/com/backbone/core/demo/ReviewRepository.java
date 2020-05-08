@@ -10,8 +10,8 @@ import java.util.Optional;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Integer> {
     Optional<Review> findById(int id);
-    Optional<List<Review>> findReviewsByProductId(Integer productId);
-    Optional<List<Review>> findReviewsByUserName(String userName);
+    Optional<List<Review>> findByProductId(Integer productId);
+    Optional<List<Review>> findByUserName(String userName);
 
 
 //    for custom queries,if you need

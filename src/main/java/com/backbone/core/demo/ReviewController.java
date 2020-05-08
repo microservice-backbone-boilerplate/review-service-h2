@@ -133,7 +133,7 @@ public class ReviewController {
         log.info("Get reviews by productId: {}", productId);
 
         try {
-            Optional<List<Review>> reviews = repository.findReviewsByProductId(Integer.valueOf(productId));
+            Optional<List<Review>> reviews = repository.findByProductId(Integer.valueOf(productId));
 
             // todo: if returns no value, means error
 
@@ -158,7 +158,7 @@ public class ReviewController {
         log.info("Get reviews by userName: {}", userName);
 
         try {
-            Optional<List<Review>> reviews = repository.findReviewsByUserName(userName);
+            Optional<List<Review>> reviews = repository.findByUserName(userName);
 
             // todo: if returns no value, means error
 
