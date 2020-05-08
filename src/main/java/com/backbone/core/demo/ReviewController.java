@@ -20,9 +20,8 @@ public class ReviewController {
     @Autowired
     ReviewRepository repository;
 
-//  L2 REST   separate GET/POST/DELETE/PUT requests @GetMapping ..
-//  L3 REST   HATEOS (return also next actions
-//  /review/1
+
+//  Read ops
 
     /**
      * Get review by Id
@@ -120,6 +119,60 @@ public class ReviewController {
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
     }
+
+//  Service ops
+
+    /**
+     * Get all reviews by productId.
+     *
+     * @return If OK, returns List<Review>, and HttpStatus.OK
+     *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
+     */
+    @GetMapping("/reviews/product/{productId}")
+    public ResponseEntity<List<Review>> getReviewsByProductId(@PathVariable String productId) {
+        log.info("Get reviews by productId: {}", productId);
+
+        try {
+            Optional<List<Review>> reviews = repository.findReviewsByProductId(Integer.valueOf(productId));
+
+            // todo: if returns no value, means error
+
+            log.info("Returned reviews of product: {}", reviews.get());
+
+            return new ResponseEntity<>(reviews.get(), HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Get reviews by productId {}: {}", productId, e.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
+        }
+    }
+
+    /**
+     * Get all reviews by userName.
+     *
+     * @return If OK, returns List<Review>, and HttpStatus.OK
+     *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
+     */
+    @GetMapping("/reviews/user/{userName}")
+    public ResponseEntity<List<Review>> getReviewsByUserName(@PathVariable String userName) {
+        log.info("Get reviews by userName: {}", userName);
+
+        try {
+            Optional<List<Review>> reviews = repository.findReviewsByUserName(userName);
+
+            // todo: if returns no value, means error
+
+            log.info("Returned reviews of userName: {}", reviews.get());
+
+            return new ResponseEntity<>(reviews.get(), HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Get reviews by userName {}: {}", userName, e.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
+        }
+    }
+
+//  CreateUpdateDelete ops
 
     /**
      * Create review.
