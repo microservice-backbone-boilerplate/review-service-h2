@@ -157,7 +157,7 @@ public class ReviewController {
      * @return If OK, returns List<Review>, and HttpStatus.OK
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
-    @GetMapping("/reviews/product/{productId}")
+    @GetMapping("/reviews/{productId}/product")
     public ResponseEntity<List<Review>> getReviewsByProductId(@PathVariable String productId) {
         log.info("Get reviews by productId: {}", productId);
 
@@ -182,7 +182,7 @@ public class ReviewController {
      * @return If OK, returns List<Review>, and HttpStatus.OK
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
-    @GetMapping("/reviews/user/{userName}")
+    @GetMapping("/reviews/{userName}/user")
     public ResponseEntity<List<Review>> getReviewsByUserName(@PathVariable String userName) {
         log.info("Get reviews by userName: {}", userName);
 
