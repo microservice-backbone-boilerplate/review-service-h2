@@ -16,9 +16,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+
 @RestController
 @Slf4j
 public class ReviewController {
+
+    private static final String PAGE = "0";
+    private static final String SIZE = "10";
 
     @Autowired
     ReviewRepository repository;
@@ -29,29 +33,32 @@ public class ReviewController {
     /**
      * Get review by Id
      *
+     * log format: message [param1, param2] : returned-object
+     *     message can be => Not found, Get, Returned, Exception
+     *
      * @param id Review's Id in URL
      * @return If find, returns Review, and HttpStatus.OK
      *         If not found, returns Null, and HttpStatus.NOT_FOUND
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
-    @GetMapping("/reviews/{id}")
+    @GetMapping("/review/{id}")
     public ResponseEntity<Review> getReview(@PathVariable String id) {
-        log.info("Get review by id: {}", id);
+        log.info("Get [id:{}]", id);
 
         try {
             Optional<Review> review = repository.findById(Integer.parseInt(id));
 
             if (review.isEmpty()) {
-                log.warn("Get review by id {}: {}", id, "review not found");
+                log.error("Not Found [id:{}]", id);
 
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
-            log.info("Returned review: {}", review.get());
+            log.info("Returned [id:{}] : {}", id, review.get());
 
             return new ResponseEntity<>(review.get(), HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Get review by id {}: {}", id, e.getMessage());
+            log.error("Exception [id:{}] : {}", id, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -65,17 +72,17 @@ public class ReviewController {
      *         If not found, returns Null
      *         If any exception occurs, returns null
      */
-    @GetMapping("v2/reviews/{id}")
+    @GetMapping("v2/review/{id}")
     public EntityModel<Review> getReviewAsHATEOS(@PathVariable String id) {
-        log.info("Get review by id: {}", id);
+        log.info("Get [id:{}]", id);
 
         try {
             Optional<Review> review = repository.findById(Integer.parseInt(id));
 
             if (review.isEmpty()) {
-                log.warn("Get review by id {}: {}", id, "review not found");
+                log.warn("Not found [id:{}]", id);
 
-                return new EntityModel<>(review.get(), null, null);
+                return new EntityModel<>(null, null, null);
             }
 
             Link getLink = WebMvcLinkBuilder.linkTo(ReviewController.class)
@@ -88,62 +95,59 @@ public class ReviewController {
                             .deleteReview(String.valueOf(review.get().getId())))
                     .withRel("delete");
 
-            log.info("Returned review: {}", review.get());
+            log.info("Returned [id:{}]: {}", id, review.get());
 
             return new EntityModel<>(review.get(), getLink, deleteLink);
         } catch (Exception e) {
-            log.error("Get review by id {}: {}", id, e.getMessage());
+            log.error("Exception [id:{}] : {}", id, e.getMessage());
 
             return new EntityModel<>(null, null, null);
         }
     }
 
     /**
-     * Get all reviews. Just for demonstration purposes.
+     * Get all reviews via paging and size.
      *
+     * @param page default=0 to ...N
+     * @param size default=10, if empty
      * @return If OK, returns List<Review>, and HttpStatus.OK
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
+     *         If page or size has no record, returns null, and HttpStatus.NOT_FOUND
      */
-    @GetMapping("/reviews")
-    public ResponseEntity<List<Review>> getReviews() {
-        log.info("Get reviews");
+    @GetMapping(path = {"/reviews",
+                        "/reviews/page/{page}",
+                        "/reviews/page/{page}/size/{size}"})
+    public ResponseEntity<List<Review>> getReviews(@PathVariable(required = false) String page,
+                                                   @PathVariable(required = false) String size) {
+
+        // set defaults
+        page = (page == null) ? PAGE : page;
+        size = (size == null) ? SIZE : size;
+
+        log.info("Get [page:{}, size:{}]", page, size);
 
         try {
-            Optional<List<Review>> reviews = Optional.of(repository.findAll());
+            Page<Review> reviews = repository.findAll(PageRequest.of(Integer.parseInt(page),
+                                                                     Integer.parseInt(size)));
 
-            // todo: if returns no value, means error
+            // if no records found,
+            if (reviews.isEmpty()) {
+                log.error("No reviews [page:{}, size:{}]", page, size);
 
-            log.info("Returned 3 of.. review: {}", reviews.get().subList(0,3));
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
 
-            return new ResponseEntity<>(reviews.get(), HttpStatus.OK);
-        } catch (Exception e) {
-            log.error("Get reviews: {}", e.getMessage());
-
-            return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
-        }
-    }
-
-    /**
-     * Get all reviews via paging w/ default 10 size.
-     *
-     * @param page starting w/ 0 to ...N
-     * @return If OK, returns List<Review>, and HttpStatus.OK
-     *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
-     */
-    @GetMapping("/reviews/page/{page}")
-    public ResponseEntity<List<Review>> getReviews(@PathVariable String page) {
-        log.info("Get reviews w/ paging: {}", page);
-
-        try {
-            Page<Review> reviews = repository.findAll(PageRequest.of(Integer.parseInt(page), 10));
-
-            // todo: if returns no value, means error
-
-            log.info("Returned page:{} of reviews: {}", page, reviews.get());
+            log.info("Returned [page:{}, size:{}] : {}", page,
+                                                         size,
+                                                         reviews.get().collect(Collectors.toList()));
 
             return new ResponseEntity<>(reviews.get().collect(Collectors.toList()), HttpStatus.OK);
+        } catch (NumberFormatException nfe) {
+            log.error("Bad request [page:{}, size:{}] : {}", page, size, nfe.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            log.error("Get reviews w/ paging: {}: {}", page, e.getMessage());
+            log.error("Exception [page:{}, size:{}] : {}", page, size, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -154,23 +158,34 @@ public class ReviewController {
     /**
      * Get all reviews by productId.
      *
+     * @param productId product id
      * @return If OK, returns List<Review>, and HttpStatus.OK
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
+     *         If productId has no record, returns null, and HttpStatus.NOT_FOUND
      */
-    @GetMapping("/reviews/{productId}/product")
+    @GetMapping("/reviews/product/{productId}")
     public ResponseEntity<List<Review>> getReviewsByProductId(@PathVariable String productId) {
-        log.info("Get reviews by productId: {}", productId);
+        log.info("Get [productId:{}]", productId);
 
         try {
             Optional<List<Review>> reviews = repository.findByProductId(Integer.valueOf(productId));
 
-            // todo: if returns no value, means error
+            // if no records found,
+            if (reviews.isEmpty()) {
+                log.error("Not found [productId:{}]", productId);
 
-            log.info("Returned reviews of product: {}", reviews.get());
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            log.info("Returned [productId:{}] : {}", productId, reviews.get());
 
             return new ResponseEntity<>(reviews.get(), HttpStatus.OK);
+        } catch (NumberFormatException nfe) {
+            log.error("Bad request [productId:{}] : {}", productId, nfe.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            log.error("Get reviews by productId {}: {}", productId, e.getMessage());
+            log.error("Exception [productId:{}] : {}", productId, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -179,23 +194,30 @@ public class ReviewController {
     /**
      * Get all reviews by userName.
      *
+     * @param userName user name
      * @return If OK, returns List<Review>, and HttpStatus.OK
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
+     *         If userName has no record, returns null, and HttpStatus.NOT_FOUND
      */
-    @GetMapping("/reviews/{userName}/user")
+    @GetMapping("/reviews/user/{userName}")
     public ResponseEntity<List<Review>> getReviewsByUserName(@PathVariable String userName) {
-        log.info("Get reviews by userName: {}", userName);
+        log.info("Get [userName:{}]", userName);
 
         try {
             Optional<List<Review>> reviews = repository.findByUserName(userName);
 
-            // todo: if returns no value, means error
+            // if no records found,
+            if (reviews.isEmpty()) {
+                log.error("Not found [userName:{}]", userName);
 
-            log.info("Returned reviews of userName: {}", reviews.get());
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            log.info("Returned [userName:{}]", reviews.get());
 
             return new ResponseEntity<>(reviews.get(), HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Get reviews by userName {}: {}", userName, e.getMessage());
+            log.error("Exception [userName:{}] : {}", userName, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -211,12 +233,12 @@ public class ReviewController {
      *         If RequestBody not OK, returns Null, and HttpStatus.BAD_REQUEST
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
-    @PostMapping("/reviews")
+    @PostMapping("/review")
     public ResponseEntity<Review> addReview(@RequestBody Review review) {
-        log.info("Create review: {}", review);
+        log.info("Create [review:{}]", review);
 
         if (review == null) {
-            log.error("Create review: {}", "review is null");
+            log.error("Bad request [review:{}]", (Object) null);
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -227,11 +249,11 @@ public class ReviewController {
             HttpHeaders headers= new HttpHeaders();
             headers.add("id", String.valueOf(createdReview.getId()));
 
-            log.info("Created review: {}", createdReview);
+            log.info("Created : {}", createdReview);
 
             return new ResponseEntity<>(createdReview, headers, HttpStatus.CREATED);
         } catch (Exception e) {
-            log.error("Create review: {}", e.getMessage());
+            log.error("Exception [review:{}] : {}", review, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -246,12 +268,12 @@ public class ReviewController {
      *         If RequestBody or Id not OK, returns Null, and HttpStatus.BAD_REQUEST
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
-    @PutMapping("/reviews/{id}")
+    @PutMapping("/review/{id}")
     public ResponseEntity<Review> updateReview(@PathVariable String id, @RequestBody Review review) {
-        log.info("Update review id: {} : {}", id, review);
+        log.info("Update [id:{}, review:{}]", id, review);
 
         if (review == null || id == null) {
-            log.error("Update review: {}", "review or id is null");
+            log.error("Bad request [id:{}, review:{}]", id, review);
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -259,11 +281,11 @@ public class ReviewController {
         try {
             Review updatedReview = repository.save(review);
 
-            log.info("Updated review: {}", updatedReview);
+            log.info("Updated : {}", updatedReview);
 
             return new ResponseEntity<>(updatedReview, HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Update review id: {} : {}", id, e.getMessage());
+            log.error("Exception [id:{}] : {}", id, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -277,12 +299,12 @@ public class ReviewController {
      *         If Id not OK, returns HttpStatus.BAD_REQUEST
      *         If any exception occurs, returns HttpStatus.EXPECTATION_FAILED
      */
-    @DeleteMapping("/reviews/{id}")
+    @DeleteMapping("/review/{id}")
     public ResponseEntity<Void> deleteReview(@PathVariable String id) {
-        log.info("Delete review id: {}", id);
+        log.info("Delete [id:{}]", id);
 
         if (id == null) {
-            log.error("Delete review: {}", "id is null");
+            log.error("Bad request [id:{}]", (Object) null);
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -290,16 +312,17 @@ public class ReviewController {
         try {
             repository.deleteById(Integer.valueOf(id));
 
-            log.info("Deleted review id: {}", id);
+            log.info("Deleted [id:{}]", id);
 
             return new ResponseEntity<>(HttpStatus.OK);
 
         } catch (Exception e) {
-            log.error("Delete review id: {} : {}", id, e.getMessage());
+            log.error("Exception [id:{}] : {}", id, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
     }
 
+//  Search ops
 
 }

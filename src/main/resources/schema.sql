@@ -22,7 +22,6 @@ create table review
 
 alter table review add primary key (id);
 
---todo: create indexes user_name, product_id etc...
 
 
 INSERT INTO REVIEW (user_name,product_id,title,rating,is_verified_purchase,is_helpful,is_abuse,description) 
