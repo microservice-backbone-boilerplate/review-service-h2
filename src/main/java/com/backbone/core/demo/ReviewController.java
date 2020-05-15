@@ -57,6 +57,10 @@ public class ReviewController {
             log.info("Returned [id:{}] : {}", id, review.get());
 
             return new ResponseEntity<>(review.get(), HttpStatus.OK);
+        } catch (NumberFormatException nfe) {
+            log.error("Bad request [id:{}] : {}", id, nfe.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             log.error("Exception [id:{}] : {}", id, e.getMessage());
 
@@ -80,7 +84,7 @@ public class ReviewController {
             Optional<Review> review = repository.findById(Integer.parseInt(id));
 
             if (review.isEmpty()) {
-                log.warn("Not found [id:{}]", id);
+                log.error("Not found [id:{}]", id);
 
                 return new EntityModel<>(null, null, null);
             }
@@ -98,6 +102,10 @@ public class ReviewController {
             log.info("Returned [id:{}]: {}", id, review.get());
 
             return new EntityModel<>(review.get(), getLink, deleteLink);
+        } catch (NumberFormatException nfe) {
+            log.error("Bad request [id:{}] : {}", id, nfe.getMessage());
+
+            return new EntityModel<>(null, null, null);
         } catch (Exception e) {
             log.error("Exception [id:{}] : {}", id, e.getMessage());
 
@@ -132,7 +140,7 @@ public class ReviewController {
 
             // if no records found,
             if (reviews.isEmpty()) {
-                log.error("No reviews [page:{}, size:{}]", page, size);
+                log.error("Not found [page:{}, size:{}]", page, size);
 
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
