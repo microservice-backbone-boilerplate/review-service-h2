@@ -182,7 +182,7 @@ public class ReviewController {
             if (reviews.isEmpty()) {
                 log.error("Not found [productId:{}]", productId);
 
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(HttpStatus.OK);
             }
 
             log.info("Returned [productId:{}] : {}", productId, reviews.get());
