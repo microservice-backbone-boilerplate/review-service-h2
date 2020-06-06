@@ -1,20 +1,15 @@
 package com.backbone.core.demo;
 
+import com.backbone.core.demo.service.ReviewService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 @RestController
@@ -25,20 +20,27 @@ public class ReviewController {
     private static final String SIZE = "10";
 
     @Autowired
-    ReviewRepository repository;
+    ReviewRepository reviewRepository;
+
+    @Autowired
+    ReviewService reviewService;
 
 
 //  Read ops
 
     /**
-     * Get review by Id
+     * Get review by Id.
+     * It caches data after 1st call w/ id.
+     *
+     * @cached: review
      *
      * log format: message [param1, param2] : returned-object
      *     message can be => Not found, Get, Returned, Exception
      *
      * @param id Review's Id in URL
      * @return If find, returns Review, and HttpStatus.OK
-     *         If not found, returns Null, and HttpStatus.NOT_FOUND
+     *         If parameter is not valid (such as string instead int), returns Null, and HttpStatus.BAD_REQUEST
+     *         If not found (empty Review), returns Null, and HttpStatus.NOT_FOUND
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
     @GetMapping("/review/{id}")
@@ -46,21 +48,26 @@ public class ReviewController {
         log.info("Get [id:{}]", id);
 
         try {
-            Optional<Review> review = repository.findById(Integer.parseInt(id));
+            AtomicReference<ResponseEntity<Review>> result = new AtomicReference<>();
 
-            if (review.isEmpty()) {
-                log.error("Not Found [id:{}]", id);
+            reviewService.getReview(id)
+                         .ifPresent(review -> {
 
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
+                            log.info("Returned [id:{}] : {}", id, review);
 
-            log.info("Returned [id:{}] : {}", id, review.get());
+                            result.set(new ResponseEntity<>(review, HttpStatus.OK));
+                         });
 
-            return new ResponseEntity<>(review.get(), HttpStatus.OK);
+            return result.get();
+
         } catch (NumberFormatException nfe) {
             log.error("Bad request [id:{}] : {}", id, nfe.getMessage());
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (NullPointerException npe) {
+            log.warn("Not found [id:{}] : {}", id, npe.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             log.error("Exception [id:{}] : {}", id, e.getMessage());
 
@@ -68,59 +75,64 @@ public class ReviewController {
         }
     }
 
-    /**
-     * Get review by Id w/ HATEOS support (GET and DELETE links)
-     *
-     * @param id Reviews's Id in URL
-     * @return If find, returns Review, and get link, and delete link
-     *         If not found, returns Null
-     *         If any exception occurs, returns null
-     */
-    @GetMapping("v2/review/{id}")
-    public EntityModel<Review> getReviewAsHATEOS(@PathVariable String id) {
-        log.info("Get [id:{}]", id);
-
-        try {
-            Optional<Review> review = repository.findById(Integer.parseInt(id));
-
-            if (review.isEmpty()) {
-                log.error("Not found [id:{}]", id);
-
-                return new EntityModel<>(null, null, null);
-            }
-
-            Link getLink = WebMvcLinkBuilder.linkTo(ReviewController.class)
-                    .slash(review.get().getId())
-                    .withSelfRel();
-
-            Link deleteLink = WebMvcLinkBuilder.
-                    linkTo(WebMvcLinkBuilder
-                            .methodOn(ReviewController.class)
-                            .deleteReview(String.valueOf(review.get().getId())))
-                    .withRel("delete");
-
-            log.info("Returned [id:{}]: {}", id, review.get());
-
-            return new EntityModel<>(review.get(), getLink, deleteLink);
-        } catch (NumberFormatException nfe) {
-            log.error("Bad request [id:{}] : {}", id, nfe.getMessage());
-
-            return new EntityModel<>(null, null, null);
-        } catch (Exception e) {
-            log.error("Exception [id:{}] : {}", id, e.getMessage());
-
-            return new EntityModel<>(null, null, null);
-        }
-    }
+//    /**
+//     * Get review by Id w/ HATEOS support (GET and DELETE links)
+//     *
+//     * @param id Reviews's Id in URL
+//     * @return If find, returns Review, and get link, and delete link
+//     *         If not found, returns Null
+//     *         If any exception occurs, returns null
+//     */
+//    @GetMapping("v2/review/{id}")
+//    public EntityModel<Review> getReviewAsHATEOS(@PathVariable String id) {
+//        log.info("Get [id:{}]", id);
+//
+//        try {
+//            Optional<Review> review = reviewRepository.findById(parseInt(id));
+//
+//            if (review.isEmpty()) {
+//                log.error("Not found [id:{}]", id);
+//
+//                return new EntityModel<>(null, null, null);
+//            }
+//
+//            Link getLink = WebMvcLinkBuilder.linkTo(ReviewController.class)
+//                    .slash(review.get().getId())
+//                    .withSelfRel();
+//
+//            Link deleteLink = WebMvcLinkBuilder.
+//                    linkTo(WebMvcLinkBuilder
+//                            .methodOn(ReviewController.class)
+//                            .deleteReview(String.valueOf(review.get().getId())))
+//                    .withRel("delete");
+//
+//            log.info("Returned [id:{}]: {}", id, review.get());
+//
+//            return new EntityModel<>(review.get(), getLink, deleteLink);
+//        } catch (NumberFormatException nfe) {
+//            log.error("Bad request [id:{}] : {}", id, nfe.getMessage());
+//
+//            return new EntityModel<>(null, null, null);
+//        } catch (Exception e) {
+//            log.error("Exception [id:{}] : {}", id, e.getMessage());
+//
+//            return new EntityModel<>(null, null, null);
+//        }
+//    }
 
     /**
      * Get all reviews via paging and size.
+     * It caches data after 1st call.
+     *
+     * @cached: review
+     *
      *
      * @param page default=0 to ...N
      * @param size default=10, if empty
      * @return If OK, returns List<Review>, and HttpStatus.OK
+     *         If parameter is not valid (such as string instead int), returns Null, and HttpStatus.BAD_REQUEST
+     *         If page or size have no record, returns null, and HttpStatus.NO_CONTENT
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
-     *         If page or size has no record, returns null, and HttpStatus.NOT_FOUND
      */
     @GetMapping(path = {"/reviews",
                         "/reviews/page/{page}",
@@ -128,34 +140,36 @@ public class ReviewController {
     public ResponseEntity<List<Review>> getReviews(@PathVariable(required = false) String page,
                                                    @PathVariable(required = false) String size) {
 
-        // set defaults
-        page = (page == null) ? PAGE : page;
-        size = (size == null) ? SIZE : size;
+        //set defaults
+        String p = Optional.ofNullable(page).orElse(PAGE);
+        String s = Optional.ofNullable(size).orElse(SIZE);
 
-        log.info("Get [page:{}, size:{}]", page, size);
+        log.info("Get [page:{}, size:{}]", p, s);
 
         try {
-            Page<Review> reviews = repository.findAll(PageRequest.of(Integer.parseInt(page),
-                                                                     Integer.parseInt(size)));
+            AtomicReference<ResponseEntity<List<Review>>> result = new AtomicReference<>();
 
-            // if no records found,
-            if (reviews.isEmpty()) {
-                log.error("Not found [page:{}, size:{}]", page, size);
+            reviewService.getReviews(p, s)
+                         .ifPresent(reviews -> {
 
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
+                            // todo: returning all reviews in logs vs part of it. better way (debug level) may be good
+                            log.info("Returned [page:{}, size:{}] : {}", p, s, reviews.getContent());
 
-            log.info("Returned [page:{}, size:{}] : {}", page,
-                                                         size,
-                                                         reviews.get().collect(Collectors.toList()));
+                            result.set(new ResponseEntity<>(reviews.getContent(), HttpStatus.OK));
+                         });
 
-            return new ResponseEntity<>(reviews.get().collect(Collectors.toList()), HttpStatus.OK);
+            return result.get();
+
         } catch (NumberFormatException nfe) {
-            log.error("Bad request [page:{}, size:{}] : {}", page, size, nfe.getMessage());
+            log.error("Bad request [page:{}, size:{}] : {}", p, s, nfe.getMessage());
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (NullPointerException npe) {
+            log.warn("No content [page:{}, size:{}] : {}", p, s, npe.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
-            log.error("Exception [page:{}, size:{}] : {}", page, size, e.getMessage());
+            log.error("Exception [page:{}, size:{}] : {}", p, s, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -165,33 +179,43 @@ public class ReviewController {
 
     /**
      * Get all reviews by productId.
+     * It caches data after 1st call by product's id
+     *
+     * @cached: review
      *
      * @param productId product id
      * @return If OK, returns List<Review>, and HttpStatus.OK
+     *         If productId has no record, returns null, and HttpStatus.NO_CONTENT
+     *         If parameter is not valid (such as string instead int), returns Null, and HttpStatus.BAD_REQUEST
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
-     *         If productId has no record, returns null, and HttpStatus.NOT_FOUND
      */
     @GetMapping("/reviews/product/{productId}")
     public ResponseEntity<List<Review>> getReviewsByProductId(@PathVariable String productId) {
+
         log.info("Get [productId:{}]", productId);
 
         try {
-            Optional<List<Review>> reviews = repository.findByProductId(Integer.valueOf(productId));
+            AtomicReference<ResponseEntity<List<Review>>> result = new AtomicReference<>();
 
-            // if no records found,
-            if (reviews.isEmpty()) {
-                log.error("Not found [productId:{}]", productId);
+            reviewService.getReviewsByProductId(productId)
+                         .ifPresent(reviews -> {
 
-                return new ResponseEntity<>(HttpStatus.OK);
-            }
+                            log.info("Returned [productId:{}] : {}", productId, reviews);
 
-            log.info("Returned [productId:{}] : {}", productId, reviews.get());
+                            result.set(new ResponseEntity<>(reviews, HttpStatus.OK));
 
-            return new ResponseEntity<>(reviews.get(), HttpStatus.OK);
+                         });
+
+            return result.get();
+
         } catch (NumberFormatException nfe) {
             log.error("Bad request [productId:{}] : {}", productId, nfe.getMessage());
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (NullPointerException npe) {
+            log.warn("No content [productId:{}] : {}", productId, npe.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             log.error("Exception [productId:{}] : {}", productId, e.getMessage());
 
@@ -202,28 +226,38 @@ public class ReviewController {
     /**
      * Get all reviews by userName.
      *
+     * It caches data after 1st call by product's id
+     *
+     * @cached: review
+     *
      * @param userName user name
      * @return If OK, returns List<Review>, and HttpStatus.OK
+     *         If userName has no record, returns null, and HttpStatus.NO_CONTENT
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
-     *         If userName has no record, returns null, and HttpStatus.NOT_FOUND
      */
     @GetMapping("/reviews/user/{userName}")
     public ResponseEntity<List<Review>> getReviewsByUserName(@PathVariable String userName) {
+
         log.info("Get [userName:{}]", userName);
 
         try {
-            Optional<List<Review>> reviews = repository.findByUserName(userName);
+            AtomicReference<ResponseEntity<List<Review>>> result = new AtomicReference<>();
 
-            // if no records found,
-            if (reviews.isEmpty()) {
-                log.error("Not found [userName:{}]", userName);
+            reviewService.getReviewsByUserName(userName)
+                         .ifPresent(reviews -> {
 
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
+                            log.info("Returned [userName:{}] : {}", userName, reviews);
 
-            log.info("Returned [userName:{}]", reviews.get());
+                            result.set(new ResponseEntity<>(reviews, HttpStatus.OK));
 
-            return new ResponseEntity<>(reviews.get(), HttpStatus.OK);
+                         });
+
+            return result.get();
+
+        } catch (NullPointerException npe) {
+            log.warn("Not found [userName:{}] : {}", userName, npe.getMessage());
+
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             log.error("Exception [userName:{}] : {}", userName, e.getMessage());
 
@@ -234,66 +268,43 @@ public class ReviewController {
 //  CreateUpdateDelete ops
 
     /**
-     * Create review.
+     * Save review. If,
+     *   id == 0, creates
+     *   id != 0 and isValid, updates
+     *   id != 0 and notValid, creates and risks cache!
      *
      * @param review as JSON in RequestBody
-     * @return If OK, creates Review, new Id in Headers, and HttpStatus.CREATED
-     *         If RequestBody not OK, returns Null, and HttpStatus.BAD_REQUEST
-     *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
-     */
-    @PostMapping("/review")
-    public ResponseEntity<Review> addReview(@RequestBody Review review) {
-        log.info("Create [review:{}]", review);
-
-        if (review == null) {
-            log.error("Bad request [review:{}]", (Object) null);
-
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        try {
-            Review createdReview = repository.save(review);
-
-            HttpHeaders headers= new HttpHeaders();
-            headers.add("id", String.valueOf(createdReview.getId()));
-
-            log.info("Created : {}", createdReview);
-
-            return new ResponseEntity<>(createdReview, headers, HttpStatus.CREATED);
-        } catch (Exception e) {
-            log.error("Exception [review:{}] : {}", review, e.getMessage());
-
-            return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
-        }
-    }
-
-    /**
-     * Update review.
-     *
-     * @param id of Review in URL
-     * @param review as JSON in RequestBody
-     * @return If OK, returns updated Review, and HttpStatus.OK
+     * @return If OK, returns updated or created Review, and HttpStatus.OK
      *         If RequestBody or Id not OK, returns Null, and HttpStatus.BAD_REQUEST
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
-    @PutMapping("/review/{id}")
-    public ResponseEntity<Review> updateReview(@PathVariable String id, @RequestBody Review review) {
-        log.info("Update [id:{}, review:{}]", id, review);
+    @PutMapping("/review")
+    @PostMapping("/review")
+    public ResponseEntity<Review> saveReview(@RequestBody Review review) {
 
-        if (review == null || id == null) {
-            log.error("Bad request [id:{}, review:{}]", id, review);
+        log.info("Save [review:{}]", review);
 
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        AtomicReference<ResponseEntity<Review>> result = new AtomicReference<>();
 
         try {
-            Review updatedReview = repository.save(review);
+            Optional.of(review)
+                    .flatMap(review1 ->
+                            reviewService.saveReview(String.valueOf(review1.getId()), review1))
+                                         .ifPresent(updatedReview -> {
+                                            log.info("Saved : {}", updatedReview);
 
-            log.info("Updated : {}", updatedReview);
+                                            result.set(new ResponseEntity<>(updatedReview, HttpStatus.OK));
+                                         });
 
-            return new ResponseEntity<>(updatedReview, HttpStatus.OK);
+            return result.get();
+
+        } catch (IllegalArgumentException iae) {
+            log.error("Bad request [review:{}]", review);
+
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            log.error("Exception [id:{}] : {}", id, e.getMessage());
+
+            log.error("Exception [review:{}] : {}", review, e.getMessage());
 
             return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
         }
@@ -304,25 +315,33 @@ public class ReviewController {
      *
      * @param id of Review in URL
      * @return If OK, returns HttpStatus.OK
-     *         If Id not OK, returns HttpStatus.BAD_REQUEST
+     *         If Input is not OK, returns HttpStatus.BAD_REQUEST
      *         If any exception occurs, returns HttpStatus.EXPECTATION_FAILED
      */
     @DeleteMapping("/review/{id}")
     public ResponseEntity<Void> deleteReview(@PathVariable String id) {
+
         log.info("Delete [id:{}]", id);
 
-        if (id == null) {
-            log.error("Bad request [id:{}]", (Object) null);
-
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        AtomicReference<ResponseEntity<Void>> result = new AtomicReference<>();
 
         try {
-            repository.deleteById(Integer.valueOf(id));
 
-            log.info("Deleted [id:{}]", id);
+            Optional.of(id)
+                    .ifPresent(id1 -> {
+                        reviewService.deleteReview(id1);
 
-            return new ResponseEntity<>(HttpStatus.OK);
+                        log.info("Deleted [id:{}]", id1);
+
+                        result.set(new ResponseEntity<>(HttpStatus.OK));
+                    });
+
+            return result.get();
+
+        } catch (IllegalArgumentException iae) {
+            log.error("Bad request [id:{}]", id);
+
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 
         } catch (Exception e) {
             log.error("Exception [id:{}] : {}", id, e.getMessage());
