@@ -17,7 +17,7 @@ to create microservices faster, you need a backbone. This boilerplate prepared t
     - [ ] distributed-tracing {sleuth}
     - [ ] monitoring
 - [ ] api-management
-    - [] message-converter (such as text2json and vice versa)
+    - [ ] message-converter (such as text2json and vice versa)
 - [ ] security
 - [x] profiles (dev, test, prod)
 - [ ] logical boundaries (separating dbs)
@@ -72,8 +72,7 @@ to create microservices faster, you need a backbone. This boilerplate prepared t
 
 <br>**on Kubernetes**,
 
-1. Create GKE cluster 
-    - `mkdir microservice-backbone-boilerplate && cd microservice-backbone-boilerplate` then Follow the steps in `Readme.md`.
+1. Create GKE cluster by following in [Readme.md](https://github.com/microservice-backbone-boilerplate/infrastructure-core).
 2. Prepare and deploy docker images to GCP
     - Edit `gradle.properties`
     - Run `./gradlew dockerTag`. Test w/ 
