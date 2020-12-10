@@ -1,5 +1,5 @@
 
--- jdbc:h2:mem:products is active
+-- jdbc:h2:mem:reviews is active
 
 --create schema
 
