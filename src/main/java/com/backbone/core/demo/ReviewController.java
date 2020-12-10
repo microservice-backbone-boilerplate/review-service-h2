@@ -28,6 +28,8 @@ public class ReviewController {
 
 //  Read ops
 
+    //todo: enhance log-message format => sometimes we may return other than object like count of records...
+
     /**
      * Get review by Id.
      * It caches data after 1st call w/ id.
@@ -222,6 +224,8 @@ public class ReviewController {
 
 //  CreateUpdateDelete ops
 
+    //TODO: in elasticsearch, PUT is arranged as partial product update, POST is creating a new one.
+
     /**
      * Save review. If,
      *   id == 0, creates
@@ -233,7 +237,7 @@ public class ReviewController {
      *         If RequestBody or Id not OK, returns Null, and HttpStatus.BAD_REQUEST
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
-    @PutMapping("/review")
+    @PostMapping("/review")
     public ResponseEntity<Review> saveReview(@RequestBody Review review) {
 
         log.info("Save [review:{}]", review);
