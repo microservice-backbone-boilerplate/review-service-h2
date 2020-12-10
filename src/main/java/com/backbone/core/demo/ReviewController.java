@@ -75,51 +75,6 @@ public class ReviewController {
         }
     }
 
-//    /**
-//     * Get review by Id w/ HATEOS support (GET and DELETE links)
-//     *
-//     * @param id Reviews's Id in URL
-//     * @return If find, returns Review, and get link, and delete link
-//     *         If not found, returns Null
-//     *         If any exception occurs, returns null
-//     */
-//    @GetMapping("v2/review/{id}")
-//    public EntityModel<Review> getReviewAsHATEOS(@PathVariable String id) {
-//        log.info("Get [id:{}]", id);
-//
-//        try {
-//            Optional<Review> review = reviewRepository.findById(parseInt(id));
-//
-//            if (review.isEmpty()) {
-//                log.error("Not found [id:{}]", id);
-//
-//                return new EntityModel<>(null, null, null);
-//            }
-//
-//            Link getLink = WebMvcLinkBuilder.linkTo(ReviewController.class)
-//                    .slash(review.get().getId())
-//                    .withSelfRel();
-//
-//            Link deleteLink = WebMvcLinkBuilder.
-//                    linkTo(WebMvcLinkBuilder
-//                            .methodOn(ReviewController.class)
-//                            .deleteReview(String.valueOf(review.get().getId())))
-//                    .withRel("delete");
-//
-//            log.info("Returned [id:{}]: {}", id, review.get());
-//
-//            return new EntityModel<>(review.get(), getLink, deleteLink);
-//        } catch (NumberFormatException nfe) {
-//            log.error("Bad request [id:{}] : {}", id, nfe.getMessage());
-//
-//            return new EntityModel<>(null, null, null);
-//        } catch (Exception e) {
-//            log.error("Exception [id:{}] : {}", id, e.getMessage());
-//
-//            return new EntityModel<>(null, null, null);
-//        }
-//    }
-
     /**
      * Get all reviews via paging and size.
      * It caches data after 1st call.
@@ -279,7 +234,6 @@ public class ReviewController {
      *         If any exception occurs, returns null, and HttpStatus.EXPECTATION_FAILED
      */
     @PutMapping("/review")
-    @PostMapping("/review")
     public ResponseEntity<Review> saveReview(@RequestBody Review review) {
 
         log.info("Save [review:{}]", review);
