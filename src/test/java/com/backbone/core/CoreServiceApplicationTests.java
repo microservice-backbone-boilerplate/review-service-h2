@@ -4,15 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.blankOrNullString;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -56,6 +55,8 @@ class CoreServiceApplicationTests {
         this.mockMvc.perform(get(url))
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$..id", hasSize(1)))
+                .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(content().string(containsString(expectedMessage)));
     }
 
@@ -94,10 +95,14 @@ class CoreServiceApplicationTests {
     public void reviewsShouldReturnOneHundredRecords() throws Exception {
         String url = "/reviews/page/0/size/100";
         String expectedMessage = "\"id\":100";
+        int recordCount = 100;
 
         this.mockMvc.perform(get(url))
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$..id", hasSize(recordCount)))
+                .andExpect(jsonPath("$.[0].id", is(1)))
+                .andExpect(jsonPath("$.[99].id", is(100)))
                 .andExpect(content().string(containsString(expectedMessage)));
     }
 
@@ -146,6 +151,52 @@ class CoreServiceApplicationTests {
 
     // service ops
 
-    //
+    // save
+    @Test
+    public void reviewUpdate() throws Exception {
+        String url = "/review";
+        String updatedReview = "{\"id\":10,\n" +
+                "          \"userName\":\"viladamir34\",\n" +
+                "          \"productId\":7,\n" +
+                "          \"title\":\"title\",\n" +
+                "          \"rating\":4,\n" +
+                "          \"description\":\"description\",\n" +
+                "          \"verifiedPurchase\":true,\n" +
+                "          \"helpful\":true,\n" +
+                "          \"abuse\":true}";
 
+        this.mockMvc.perform(post(url)
+                               .contentType(MediaType.APPLICATION_JSON)
+                               .content(updatedReview))
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$.id", is(10)))
+                .andExpect(jsonPath("$.title", is("title")))
+                .andExpect(jsonPath("$.description", is("description")));
+        //todo: check other field updates, too
+    }
+
+    @Test
+    public void reviewCreate() throws Exception {
+        String url = "/review";
+        String updatedReview = "{" +
+                "          \"userName\":\"viladamir34\",\n" +
+                "          \"productId\":7,\n" +
+                "          \"title\":\"title\",\n" +
+                "          \"rating\":4,\n" +
+                "          \"description\":\"description\",\n" +
+                "          \"verifiedPurchase\":true,\n" +
+                "          \"helpful\":true,\n" +
+                "          \"abuse\":true}";
+
+        this.mockMvc.perform(post(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedReview))
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$.id", is(101)))
+                .andExpect(jsonPath("$.title", is("title")))
+                .andExpect(jsonPath("$.description", is("description")));
+        //todo: check other field updates, too
+    }
 }
