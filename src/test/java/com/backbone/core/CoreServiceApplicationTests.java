@@ -62,7 +62,7 @@ class CoreServiceApplicationTests {
 
     @Test
     public void reviewGetsNotAvailableIDAndReturnsNotFound() throws Exception {
-        String url = "/review/101";
+        String url = "/review/200";
 
         this.mockMvc.perform(get(url))
                 .andDo(print())
@@ -140,7 +140,7 @@ class CoreServiceApplicationTests {
 
     @Test
     public void reviewsReturnOKButNoRecordAfterLastPage() throws Exception {
-        String url = "/reviews/page/10/size/10";
+        String url = "/reviews/page/20/size/10";
         String expectedMessage = "\"id\":1";
 
         this.mockMvc.perform(get(url))
@@ -179,7 +179,7 @@ class CoreServiceApplicationTests {
     @Test
     public void reviewCreate() throws Exception {
         String url = "/review";
-        String updatedReview = "{" +
+        String newReview = "{" +
                 "          \"userName\":\"viladamir34\",\n" +
                 "          \"productId\":7,\n" +
                 "          \"title\":\"title\",\n" +
@@ -191,7 +191,7 @@ class CoreServiceApplicationTests {
 
         this.mockMvc.perform(post(url)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(updatedReview))
+                .content(newReview))
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.id", is(101)))
@@ -199,4 +199,7 @@ class CoreServiceApplicationTests {
                 .andExpect(jsonPath("$.description", is("description")));
         //todo: check other field updates, too
     }
+
+    // delete
+
 }
