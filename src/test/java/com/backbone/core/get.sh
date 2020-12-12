@@ -11,3 +11,7 @@ curl localhost:8084/review/1
 
 printf "\n review/101 : >>"
 curl localhost:8084/review/101
+
+curl localhost:8084/reviews
+curl localhost:8084/reviews/page/0/size/1
+
