@@ -11,7 +11,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-
+/**
+ * ReviewController
+ *
+ * In a normal scenario, we gonna need basic
+ *
+ * - GET: Read ops (by id, by page&size, some filtering),
+ * - GET: Service ops (other services may need).
+ * - POST: Create
+ * - PUT: Update
+ * - DELETE: Delete ops (by id)
+ * - GET: Search ops (by category+page&size)
+ *
+ * The main points are, how to position,
+ * - PUT (partial update) and POST (whole new creation) requests,
+ * - Filtering and Search (coupled w/ db selection) concepts.
+ * - Orchestration layer in service ops: Low degree of coupling vs non-coupling
+ *
+ */
 @RestController
 @Slf4j
 public class ReviewController {
@@ -224,7 +241,8 @@ public class ReviewController {
 
 //  CreateUpdateDelete ops
 
-    //TODO: in elasticsearch, PUT is arranged as partial product update, POST is creating a new one.
+    //todo: in elasticsearch, PUT is arranged as partial product update (and waits some part of object),
+    // POST is for creating whole new one.
 
     /**
      * Save review. If,
