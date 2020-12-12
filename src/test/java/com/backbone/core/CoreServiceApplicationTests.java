@@ -46,6 +46,7 @@ class CoreServiceApplicationTests {
                 .andExpect(content().string(containsString(messageGiven)));
     }
 
+    //  Read ops
     @Test
     public void reviewShouldReturnFirstRecord() throws Exception {
         String url = "/review/1";
@@ -60,12 +61,32 @@ class CoreServiceApplicationTests {
     @Test
     public void reviewShouldNotReturnAnyRecord() throws Exception {
         String url = "/review/101";
-        String expectedMessage = "Not Found";
 
         this.mockMvc.perform(get(url))
                 .andDo(print())
-                .andExpect(status().is4xxClientError())
+                .andExpect(status().is(404))
                 .andExpect(content().string(blankOrNullString()));
     }
+
+    @Test
+    public void reviewMustGetNumberID() throws Exception {
+        String url = "/review/1ax";
+
+        this.mockMvc.perform(get(url))
+                .andDo(print())
+                .andExpect(status().is(400))
+                .andExpect(content().string(blankOrNullString()));
+    }
+
+    @Test
+    public void reviewMustGetValidID() throws Exception {
+        String url = "/review/";
+
+        this.mockMvc.perform(get(url))
+                .andDo(print())
+                .andExpect(status().is(405))
+                .andExpect(content().string(blankOrNullString()));
+    }
+
 
 }
