@@ -48,7 +48,7 @@ class CoreServiceApplicationTests {
 
     //  Read ops
     @Test
-    public void reviewShouldReturnFirstRecord() throws Exception {
+    public void reviewShouldReturnRecord() throws Exception {
         String url = "/review/1";
         String expectedMessage = "\"id\":1";
 
@@ -59,7 +59,7 @@ class CoreServiceApplicationTests {
     }
 
     @Test
-    public void reviewShouldNotReturnAnyRecord() throws Exception {
+    public void reviewShouldNotReturnRecord() throws Exception {
         String url = "/review/101";
 
         this.mockMvc.perform(get(url))
@@ -79,7 +79,7 @@ class CoreServiceApplicationTests {
     }
 
     @Test
-    public void reviewMustGetValidID() throws Exception {
+    public void reviewEndpointNotFoundWithoutID() throws Exception {
         String url = "/review/";
 
         this.mockMvc.perform(get(url))
