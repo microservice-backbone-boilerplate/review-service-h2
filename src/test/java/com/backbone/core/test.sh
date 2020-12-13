@@ -17,6 +17,8 @@ curl localhost:8084/reviews
 curl localhost:8084/reviews/page/0/size/1
 
 #save
+#PUT for partial update (not implemented yet)
+#POST is creation (w/o ID or w/ not available ID) or update (u have to provide all fields, w/ available ID)
 curl localhost:8084/review/10
 
 curl -d '{"id":10,
@@ -31,6 +33,14 @@ curl -d '{"id":10,
      -H 'Content-Type: application/json' \
      -X PUT http://localhost:8084/review
 
+#partial update is not possible, for now,
+# so below gets an exception
+curl -d '{"id":10,
+          "title":"title XXX"}' \
+     -H 'Content-Type: application/json' \
+     -X PUT http://localhost:8084/review
+
+#if id is not available, it creates a new record and assign a new id
 curl -d '{"id":110,
           "userName":"viladamir34",
           "productId":7,
@@ -43,6 +53,7 @@ curl -d '{"id":110,
      -H 'Content-Type: application/json' \
      -X PUT http://localhost:8084/review
 
+#normal creation
 curl -d '{"userName":"viladamir34",
           "productId":7,
           "title":"title",
@@ -54,6 +65,7 @@ curl -d '{"userName":"viladamir34",
      -H 'Content-Type: application/json' \
      -X PUT http://localhost:8084/review
 
+#bad request
 curl -H 'Content-Type: application/json' \
      -X PUT http://localhost:8084/review
 
