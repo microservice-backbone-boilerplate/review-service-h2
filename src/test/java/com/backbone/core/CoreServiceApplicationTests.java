@@ -8,9 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -142,7 +140,6 @@ class CoreServiceApplicationTests {
     @Test
     public void reviewsReturnOKButNoRecordAfterLastPage() throws Exception {
         String url = "/reviews/page/20/size/10";
-        String expectedMessage = "\"id\":1";
 
         this.mockMvc.perform(get(url))
                 .andDo(print())
@@ -177,7 +174,7 @@ class CoreServiceApplicationTests {
                 .andExpect(jsonPath("$.description", is("description")));
     }
 
-    //todo: implement partial update w/ PUT, then test
+    //todo: First, implement partial update w/ PUT, then test will pass
     @Test
     public void reviewUpdatePartialWithSomeFieldsAndID() throws Exception {
         String url = "/review";
@@ -264,5 +261,20 @@ class CoreServiceApplicationTests {
     }
 
     // delete
+    @Test
+    public void reviewDeleteWithID() throws Exception {
+        String url = "/review/99";
 
+        this.mockMvc.perform(delete(url))
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful());
+
+        //check deleted record
+        this.mockMvc.perform(get(url))
+                .andDo(print())
+                .andExpect(status().is(404));
+    }
+
+    //todo: after some operations, there must be steps (or other kind of methods)
+    // which checks the cache
 }
