@@ -23,28 +23,6 @@ class CoreServiceApplicationTests {
     void contextLoads() {
     }
 
-    @Test
-    public void dummyReturnsDefaultMessage() throws Exception {
-        String url = "/dummy";
-        String expectedMessage = "Hello";
-
-        this.mockMvc.perform(get(url))
-                .andDo(print())
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().string(containsString(expectedMessage)));
-    }
-
-    @Test
-    public void dummyReturnGivenMassage() throws Exception {
-        String messageGiven = "Abidin";
-        String url = "/dummy/" + messageGiven;
-
-        this.mockMvc.perform(get(url))
-                .andDo(print())
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().string(containsString(messageGiven)));
-    }
-
     //  Read ops
     @Test
     public void reviewShouldReturnOneRecord() throws Exception {
@@ -70,7 +48,7 @@ class CoreServiceApplicationTests {
     }
 
     @Test
-    public void reviewGetsNotValidIDAndReturnsNotFound() throws Exception {
+    public void reviewWithNotValidIDAndReturnsNotFound() throws Exception {
         String url = "/review/1ax";
 
         this.mockMvc.perform(get(url))
@@ -80,7 +58,7 @@ class CoreServiceApplicationTests {
     }
 
     @Test
-    public void reviewGetsNoIDAndReturnsNotFound() throws Exception {
+    public void reviewWithMissingIDAndReturnNotSupportedMethod() throws Exception {
         String url = "/review/";
 
         this.mockMvc.perform(get(url))
@@ -91,7 +69,7 @@ class CoreServiceApplicationTests {
 
     //
     @Test
-    public void reviewsShouldReturnOneHundredRecords() throws Exception {
+    public void reviewsWithZeroPagingOneHundredSizeAndReturnOneHundredRecords() throws Exception {
         String url = "/reviews/page/0/size/100";
         String expectedMessage = "\"id\":100";
         int recordCount = 100;
@@ -106,7 +84,7 @@ class CoreServiceApplicationTests {
     }
 
     @Test
-    public void reviewsReturnOneRecord() throws Exception {
+    public void reviewsWithZeroPagingOneSizeAndReturnsOneRecord() throws Exception {
         String url = "/reviews/page/0/size/1";
         String expectedMessage = "\"id\":1";
 
@@ -117,7 +95,7 @@ class CoreServiceApplicationTests {
     }
 
     @Test
-    public void reviewsReturnDefaultPaging() throws Exception {
+    public void reviewsSupportDefaultPaging() throws Exception {
         String url = "/reviews/";
         String expectedMessage = "\"id\":100";
 
@@ -128,17 +106,31 @@ class CoreServiceApplicationTests {
     }
 
     @Test
-    public void reviewsGetNotValidPageNumberAndReturnsNotFound() throws Exception {
+    public void reviewsWithNotValidPageNumberAndReturnsNotFound() throws Exception {
         String url = "/reviews/page/1a";
 
         this.mockMvc.perform(get(url))
                 .andDo(print())
                 .andExpect(status().is(400))
                 .andExpect(content().string(blankOrNullString()));
+
+        //todo: Bad request is more appropriate, but it expects String in url. May be a validation step?
     }
 
     @Test
-    public void reviewsReturnOKButNoRecordAfterLastPage() throws Exception {
+    public void reviewsWithNotValidSizeNumberAndReturnsNotFound() throws Exception {
+        String url = "/reviews/page/1/size/2a";
+
+        this.mockMvc.perform(get(url))
+                .andDo(print())
+                .andExpect(status().is(400))
+                .andExpect(content().string(blankOrNullString()));
+
+        //todo: Bad request is more appropriate, but it expects String in url. May be a validation step?
+    }
+
+    @Test
+    public void reviewsWithBigPageNumberAndReturnsNoContent() throws Exception {
         String url = "/reviews/page/20/size/10";
 
         this.mockMvc.perform(get(url))
@@ -151,7 +143,7 @@ class CoreServiceApplicationTests {
 
     // save
     @Test
-    public void reviewUpdateWithAllFieldsAndID() throws Exception {
+    public void reviewUpdateAllFieldsWithID() throws Exception {
         String url = "/review";
         String updatedReview = "{\"id\":10,\n" +
                                " \"userName\":\"viladamir34\",\n" +
@@ -167,47 +159,76 @@ class CoreServiceApplicationTests {
                                .contentType(MediaType.APPLICATION_JSON)
                                .content(updatedReview))
                 .andDo(print())
-                .andExpect(status().is2xxSuccessful())
+                .andExpect(status().is(200))
                 .andExpect(jsonPath("$.id", is(10)))
                 .andExpect(jsonPath("$.title", is("title")))
+                .andExpect(jsonPath("$.rating", is(4)))
+                .andExpect(jsonPath("$.description", is("description")))
                 .andExpect(jsonPath("$.verifiedPurchase", is(true)))
-                .andExpect(jsonPath("$.description", is("description")));
+                .andExpect(jsonPath("$.helpful", is(true)))
+                .andExpect(jsonPath("$.abuse", is(true)));
     }
 
     //todo: First, implement partial update w/ PUT, then test will pass
     @Test
-    public void reviewUpdatePartialWithSomeFieldsAndID() throws Exception {
+    public void reviewUpdatePartiallyWithID() throws Exception {
+
+        // set last values, then check
         String url = "/review";
         String updatedReview = "{\"id\":10,\n" +
-                               " \"title\":\"title PARTIAL\",\n" +
-                               " }";
+                " \"userName\":\"viladamir34\",\n" +
+                " \"productId\":7,\n" +
+                " \"title\":\"title\",\n" +
+                " \"rating\":4,\n" +
+                " \"description\":\"description\",\n" +
+                " \"verifiedPurchase\":true,\n" +
+                " \"helpful\":true,\n" +
+                " \"abuse\":true}";
 
-        //set last values, then check
-        reviewUpdateWithAllFieldsAndID();
+        this.mockMvc.perform(post(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatedReview))
+                .andDo(print())
+                .andExpect(status().is(200))
+                .andExpect(jsonPath("$.id", is(10)))
+                .andExpect(jsonPath("$.title", is("title")))
+                .andExpect(jsonPath("$.rating", is(4)))
+                .andExpect(jsonPath("$.description", is("description")))
+                .andExpect(jsonPath("$.verifiedPurchase", is(true)))
+                .andExpect(jsonPath("$.helpful", is(true)))
+                .andExpect(jsonPath("$.abuse", is(true)));
+
+        //update partially
+        String lastUpdatedReview = "{\"id\":10,\n" +
+                                   " \"title\":\"title PARTIAL\",\n" +
+                                   " }";
 
         this.mockMvc.perform(put(url)
                                .contentType(MediaType.APPLICATION_JSON)
-                               .content(updatedReview))
+                               .content(lastUpdatedReview))
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.id", is(10)))
                 .andExpect(jsonPath("$.title", is("title PARTIAL")))
+                .andExpect(jsonPath("$.rating", is(4)))
+                .andExpect(jsonPath("$.description", is("description")))
                 .andExpect(jsonPath("$.verifiedPurchase", is(true)))
-                .andExpect(jsonPath("$.description", is("description")));
+                .andExpect(jsonPath("$.helpful", is(true)))
+                .andExpect(jsonPath("$.abuse", is(true)));
     }
 
     @Test
     public void reviewCreateWithoutID() throws Exception {
         String url = "/review";
         String newReview = "{" +
-                "          \"userName\":\"viladamir34\",\n" +
-                "          \"productId\":7,\n" +
-                "          \"title\":\"title\",\n" +
-                "          \"rating\":4,\n" +
-                "          \"description\":\"description\",\n" +
-                "          \"verifiedPurchase\":true,\n" +
-                "          \"helpful\":true,\n" +
-                "          \"abuse\":true}";
+                           " \"userName\":\"viladamir34\",\n" +
+                           " \"productId\":7,\n" +
+                           " \"title\":\"title\",\n" +
+                           " \"rating\":4,\n" +
+                           " \"description\":\"description\",\n" +
+                           " \"verifiedPurchase\":true,\n" +
+                           " \"helpful\":true,\n" +
+                           " \"abuse\":true}";
 
         this.mockMvc.perform(post(url)
                                .contentType(MediaType.APPLICATION_JSON)
@@ -237,14 +258,14 @@ class CoreServiceApplicationTests {
     public void reviewCreateWithIDButReturnsAutoGeneratedID() throws Exception {
         String url = "/review";
         String newReview = "{\"id\":1500,\n" +
-                "          \"userName\":\"viladamir34\",\n" +
-                "          \"productId\":7,\n" +
-                "          \"title\":\"title\",\n" +
-                "          \"rating\":4,\n" +
-                "          \"description\":\"description\",\n" +
-                "          \"verifiedPurchase\":true,\n" +
-                "          \"helpful\":true,\n" +
-                "          \"abuse\":true}";
+                           " \"userName\":\"viladamir34\",\n" +
+                           " \"productId\":7,\n" +
+                           " \"title\":\"title\",\n" +
+                           " \"rating\":4,\n" +
+                           " \"description\":\"description\",\n" +
+                           " \"verifiedPurchase\":true,\n" +
+                           " \"helpful\":true,\n" +
+                           " \"abuse\":true}";
 
         this.mockMvc.perform(post(url)
                 .contentType(MediaType.APPLICATION_JSON)

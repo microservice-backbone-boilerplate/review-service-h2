@@ -120,6 +120,8 @@ public class ReviewController {
 
         log.info("Get [page:{}, size:{}]", p, s);
 
+        //todo: If you get, non number page or size, You must return Bad request,
+        // but it expects String in url. Consider to add a validation step?
         try {
             AtomicReference<ResponseEntity<List<Review>>> result = new AtomicReference<>();
 
