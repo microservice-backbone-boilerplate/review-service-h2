@@ -21,6 +21,8 @@ class CoreServiceApplicationTests {
 
     @Test
     void contextLoads() {
+        //todo: initial records vs initialize records here for testing?
+        // consider it
     }
 
     //  Read ops
@@ -32,13 +34,12 @@ class CoreServiceApplicationTests {
         this.mockMvc.perform(get(url))
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
-                .andExpect(jsonPath("$..id", hasSize(1)))
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(content().string(containsString(expectedMessage)));
     }
 
     @Test
-    public void reviewGetsNotAvailableIDAndReturnsNotFound() throws Exception {
+    public void reviewWithNotAvailableIDAndReturnsNotFound() throws Exception {
         String url = "/review/200";
 
         this.mockMvc.perform(get(url))
@@ -79,7 +80,6 @@ class CoreServiceApplicationTests {
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$..id", hasSize(recordCount)))
                 .andExpect(jsonPath("$.[0].id", is(1)))
-                .andExpect(jsonPath("$.[99].id", is(100)))
                 .andExpect(content().string(containsString(expectedMessage)));
     }
 
@@ -114,7 +114,7 @@ class CoreServiceApplicationTests {
                 .andExpect(status().is(400))
                 .andExpect(content().string(blankOrNullString()));
 
-        //todo: Bad request is more appropriate, but it expects String in url. May be a validation step?
+        //todo: Bad request is more appropriate, but it expects String in url. May be a ValidationService step?
     }
 
     @Test
@@ -126,7 +126,7 @@ class CoreServiceApplicationTests {
                 .andExpect(status().is(400))
                 .andExpect(content().string(blankOrNullString()));
 
-        //todo: Bad request is more appropriate, but it expects String in url. May be a validation step?
+        //todo: Bad request is more appropriate, but it expects String in url. May be a ValidationService step?
     }
 
     @Test
@@ -145,15 +145,15 @@ class CoreServiceApplicationTests {
     @Test
     public void reviewUpdateAllFieldsWithID() throws Exception {
         String url = "/review";
-        String updatedReview = "{\"id\":10,\n" +
-                               " \"userName\":\"viladamir34\",\n" +
-                               " \"productId\":7,\n" +
-                               " \"title\":\"title\",\n" +
-                               " \"rating\":4,\n" +
-                               " \"description\":\"description\",\n" +
-                               " \"verifiedPurchase\":true,\n" +
-                               " \"helpful\":true,\n" +
-                               " \"abuse\":true}";
+        String updatedReview = "{\"id\":10," +
+                               "\"userName\":\"viladamir34\"," +
+                               "\"productId\":7," +
+                               "\"title\":\"title\"," +
+                               "\"rating\":4," +
+                               "\"description\":\"description\"," +
+                               "\"verifiedPurchase\":true," +
+                               "\"helpful\":true," +
+                               "\"abuse\":true}";
 
         this.mockMvc.perform(post(url)
                                .contentType(MediaType.APPLICATION_JSON)
@@ -175,15 +175,15 @@ class CoreServiceApplicationTests {
 
         // set last values, then check
         String url = "/review";
-        String updatedReview = "{\"id\":10,\n" +
-                " \"userName\":\"viladamir34\",\n" +
-                " \"productId\":7,\n" +
-                " \"title\":\"title\",\n" +
-                " \"rating\":4,\n" +
-                " \"description\":\"description\",\n" +
-                " \"verifiedPurchase\":true,\n" +
-                " \"helpful\":true,\n" +
-                " \"abuse\":true}";
+        String updatedReview = "{\"id\":10," +
+                                "\"userName\":\"viladamir34\"," +
+                                "\"productId\":7," +
+                                "\"title\":\"title\"," +
+                                "\"rating\":4," +
+                                "\"description\":\"description\"," +
+                                "\"verifiedPurchase\":true," +
+                                "\"helpful\":true," +
+                                "\"abuse\":true}";
 
         this.mockMvc.perform(post(url)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -199,8 +199,8 @@ class CoreServiceApplicationTests {
                 .andExpect(jsonPath("$.abuse", is(true)));
 
         //update partially
-        String lastUpdatedReview = "{\"id\":10,\n" +
-                                   " \"title\":\"title PARTIAL\",\n" +
+        String lastUpdatedReview = "{\"id\":10," +
+                                   "\"title\":\"title PARTIAL\"," +
                                    " }";
 
         this.mockMvc.perform(put(url)
@@ -220,15 +220,19 @@ class CoreServiceApplicationTests {
     @Test
     public void reviewCreateWithoutID() throws Exception {
         String url = "/review";
+
+        //todo: be sure >100 id is not available,
+        // or delete all available records, first
+
         String newReview = "{" +
-                           " \"userName\":\"viladamir34\",\n" +
-                           " \"productId\":7,\n" +
-                           " \"title\":\"title\",\n" +
-                           " \"rating\":4,\n" +
-                           " \"description\":\"description\",\n" +
-                           " \"verifiedPurchase\":true,\n" +
-                           " \"helpful\":true,\n" +
-                           " \"abuse\":true}";
+                           "\"userName\":\"viladamir34\"," +
+                           "\"productId\":7," +
+                           "\"title\":\"title\"," +
+                           "\"rating\":4," +
+                           "\"description\":\"description\"," +
+                           "\"verifiedPurchase\":true," +
+                           "\"helpful\":true," +
+                           "\"abuse\":true}";
 
         this.mockMvc.perform(post(url)
                                .contentType(MediaType.APPLICATION_JSON)
@@ -257,15 +261,15 @@ class CoreServiceApplicationTests {
     @Test
     public void reviewCreateWithIDButReturnsAutoGeneratedID() throws Exception {
         String url = "/review";
-        String newReview = "{\"id\":1500,\n" +
-                           " \"userName\":\"viladamir34\",\n" +
-                           " \"productId\":7,\n" +
-                           " \"title\":\"title\",\n" +
-                           " \"rating\":4,\n" +
-                           " \"description\":\"description\",\n" +
-                           " \"verifiedPurchase\":true,\n" +
-                           " \"helpful\":true,\n" +
-                           " \"abuse\":true}";
+        String newReview = "{\"id\":1500," +
+                           "\"userName\":\"viladamir34\"," +
+                           "\"productId\":7," +
+                           "\"title\":\"title\"," +
+                           "\"rating\":4," +
+                           "\"description\":\"description\"," +
+                           "\"verifiedPurchase\":true," +
+                           "\"helpful\":true," +
+                           "\"abuse\":true}";
 
         this.mockMvc.perform(post(url)
                 .contentType(MediaType.APPLICATION_JSON)
